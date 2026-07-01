@@ -38,7 +38,7 @@ module.exports = function (app) {
     });
 
     const saved = await issue.save();
-    res.json(saved);
+    return res.json(saved);
   });
 
   // ================= GET =================
@@ -54,7 +54,7 @@ module.exports = function (app) {
     });
 
     const issues = await Issue.find(filter).select("-__v");
-    res.json(issues);
+    return res.json(issues);
   });
 
   // ================= PUT =================
@@ -62,7 +62,9 @@ module.exports = function (app) {
     const { _id, ...updates } = req.body;
 
     if (!_id) {
-      return res.status(400).json({ error: "missing _id" });
+      return res.status(400).json({
+        error: "missing _id",
+      });
     }
 
     const clean = {};
@@ -85,6 +87,7 @@ module.exports = function (app) {
     try {
       const updated = await Issue.findByIdAndUpdate(_id, clean, {
         new: true,
+        runValidators: true,
       });
 
       if (!updated) {
@@ -111,7 +114,9 @@ module.exports = function (app) {
     const { _id } = req.body;
 
     if (!_id) {
-      return res.status(400).json({ error: "missing _id" });
+      return res.status(400).json({
+        error: "missing _id",
+      });
     }
 
     try {
