@@ -1,180 +1,138 @@
-/*
- *
- *
- *       Complete the API routing below
- *
- *
- */
-
 "use strict";
 
-var expect = require("chai").expect;
-var mongoose = require("mongoose");
-var objectId = mongoose.Types.ObjectId;
+const mongoose = require("mongoose");
 
-// Not setting default on created so that updated is in sync
-var issueSchema = new mongoose.Schema({
-  project: { type: String, required: true, select: false },
+const issueSchema = new mongoose.Schema({
+  project: String,
   issue_title: { type: String, required: true },
   issue_text: { type: String, required: true },
   created_by: { type: String, required: true },
   assigned_to: { type: String, default: "" },
   status_text: { type: String, default: "" },
   open: { type: Boolean, default: true },
-  created_on: String,
-  updated_on: String,
+  created_on: { type: Date, default: Date.now },
+  updated_on: { type: Date, default: Date.now },
 });
 
-issueSchema.pre("save", function (next) {
-  if (!this.created_on) {
-    this.created_on = new Date().toISOString();
-  }
-  this.updated_on = new Date().toISOString();
-  next();
-});
-
-var Issue = mongoose.model("issues", issueSchema);
-
-function required(issue, requiredFields) {
-  let errors = [];
-
-  requiredFields.forEach((field) => {
-    if (!issue[field]) {
-      errors.push(field);
-    }
-  });
-
-  if (errors.length) {
-    return "Missing required fields: " + errors.join(", ");
-  }
-  // return false
-}
-
-function populate(source, fields, obj = {}) {
-  fields.forEach((field) => {
-    if (source[field]) {
-      obj[field] = source[field];
-    }
-  });
-  return obj;
-}
+const Issue = mongoose.model("Issue", issueSchema);
 
 module.exports = function (app) {
-  app
-    .route("/api/issues/:project")
-    // GET
-    .get(function (req, res) {
-      let fields = [
-        "issue_title",
-        "issue_text",
-        "created_by",
-        "assigned_to",
-        "status_text",
-        "open",
-        "created_on",
-        "updated_on",
-      ];
-      let query = populate(req.query, fields);
-      query.project = req.params.project;
-      if (req.query._id) {
-        query._id = objectId(req.query._id);
-      }
+  // ================= POST =================
+  app.post("/api/issues/:project", async (req, res) => {
+    const { issue_title, issue_text, created_by } = req.body;
 
-      Issue.find(query, (err, issues) => {
-        if (err) {
-          res.status(500).json(err);
-        }
-        res.json(issues);
+    if (!issue_title || !issue_text || !created_by) {
+      return res.status(400).json({
+        error: "required field(s) missing",
       });
-    })
+    }
 
-    // POST
-    .post(function (req, res) {
-      // TODO: check fields to make sure they are valid?
-      req.body.project = req.params.project;
-
-      let errors = required(req.body, [
-        "project",
-        "issue_title",
-        "issue_text",
-        "created_by",
-      ]);
-      if (errors) {
-        res.status(400).send(errors);
-        return;
-      }
-      let fields = [
-        "project",
-        "issue_title",
-        "issue_text",
-        "created_by",
-        "assigned_to",
-        "status_text",
-      ];
-      let newIssue = new Issue(populate(req.body, fields));
-      newIssue.save((err, issue) => {
-        if (err) {
-          res.status(500).json(err);
-        }
-        res.json(issue);
-      });
-    })
-
-    // PUT
-    .put(function (req, res) {
-      let project = req.params.project;
-      let _id = req.body._id;
-      if (!_id) {
-        return res.status(400).send("_id error");
-      }
-      _id = objectId(_id);
-
-      // TODO: check how mongoose handles invalid fields
-      let fields = [
-        "issue_title",
-        "issue_text",
-        "created_by",
-        "assigned_to",
-        "status_text",
-        "open",
-      ];
-      let query = populate(req.body, fields);
-
-      if (!Object.keys(query).length) {
-        return res.status(400).send("no updated field sent");
-      }
-
-      Issue.findById(_id)
-        .then((issue) => {
-          if (!issue) {
-            throw "could not update " + _id;
-          }
-          issue = populate(query, fields, issue);
-          return issue.save();
-        })
-        .then((saved) => {
-          res.send("successfully updated");
-        })
-        .catch((err) => {
-          res.status(500).send("could not update " + _id);
-        });
-    })
-
-    // DELETE
-    .delete(function (req, res) {
-      let project = req.params.project;
-      let _id = req.body._id;
-      if (!_id) {
-        res.status(400).send("no _id");
-        return;
-      }
-      _id = objectId(_id);
-      Issue.findByIdAndRemove(_id, (err, issue) => {
-        if (err) {
-          res.status(500).send("could not delete " + _id);
-        } else {
-          res.send("deleted " + _id);
-        }
-      });
+    const issue = new Issue({
+      project: req.params.project,
+      issue_title,
+      issue_text,
+      created_by,
+      assigned_to: req.body.assigned_to || "",
+      status_text: req.body.status_text || "",
+      open: true,
     });
+
+    const saved = await issue.save();
+    res.json(saved);
+  });
+
+  // ================= GET =================
+  app.get("/api/issues/:project", async (req, res) => {
+    const filter = { project: req.params.project };
+
+    Object.keys(req.query).forEach((key) => {
+      if (key === "open") {
+        filter.open = req.query.open === "true";
+      } else {
+        filter[key] = req.query[key];
+      }
+    });
+
+    const issues = await Issue.find(filter).select("-__v");
+    res.json(issues);
+  });
+
+  // ================= PUT =================
+  app.put("/api/issues/:project", async (req, res) => {
+    const { _id, ...updates } = req.body;
+
+    if (!_id) {
+      return res.status(400).json({ error: "missing _id" });
+    }
+
+    const clean = {};
+
+    Object.keys(updates).forEach((k) => {
+      if (updates[k] !== "" && updates[k] !== undefined) {
+        clean[k] = updates[k];
+      }
+    });
+
+    if (Object.keys(clean).length === 0) {
+      return res.status(400).json({
+        error: "no update field(s) sent",
+        _id,
+      });
+    }
+
+    clean.updated_on = new Date();
+
+    try {
+      const updated = await Issue.findByIdAndUpdate(_id, clean, {
+        new: true,
+      });
+
+      if (!updated) {
+        return res.status(400).json({
+          error: "could not update",
+          _id,
+        });
+      }
+
+      return res.json({
+        result: "successfully updated",
+        _id,
+      });
+    } catch (err) {
+      return res.status(400).json({
+        error: "could not update",
+        _id,
+      });
+    }
+  });
+
+  // ================= DELETE =================
+  app.delete("/api/issues/:project", async (req, res) => {
+    const { _id } = req.body;
+
+    if (!_id) {
+      return res.status(400).json({ error: "missing _id" });
+    }
+
+    try {
+      const deleted = await Issue.findByIdAndDelete(_id);
+
+      if (!deleted) {
+        return res.status(400).json({
+          error: "could not delete",
+          _id,
+        });
+      }
+
+      return res.json({
+        result: "successfully deleted",
+        _id,
+      });
+    } catch (err) {
+      return res.status(400).json({
+        error: "could not delete",
+        _id,
+      });
+    }
+  });
 };

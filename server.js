@@ -1,81 +1,55 @@
 "use strict";
 
-var express = require("express");
-var bodyParser = require("body-parser");
-var expect = require("chai").expect;
-var cors = require("cors");
-var helmet = require("helmet");
-var mongoose = require("mongoose");
+require("dotenv").config();
 
-var apiRoutes = require("./routes/api.js");
-var fccTestingRoutes = require("./routes/fcctesting.js");
-var runner = require("./test-runner");
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
-var app = express();
+const apiRoutes = require("./routes/api.js");
+const fccTestingRoutes = require("./routes/fcctesting.js");
+const runner = require("./test-runner");
 
-mongoose.Promise = global.Promise;
-const dbName = "issue-tracker";
-mongoose.connect(`${process.env.DB}${dbName}`, { useNewUrlParser: true });
-const db = mongoose.connection;
-db.on("error", (err) => {
-  console.error(err);
-});
-db.once("open", () => {
-  console.log("Connected to " + dbName);
-});
+const app = express();
 
-// Close MongoDB connection
-process.on("SIGINT", () => {
-  db.close(() => {
-    console.log(`Closing connection to ${dbName}`);
-    process.exit(0);
-  });
-});
+// ✅ FIX: clean MongoDB connect (NO OPTIONS)
+mongoose
+  .connect(process.env.DB)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("MongoDB error:", err));
 
+// middleware
 app.use("/public", express.static(process.cwd() + "/public"));
-
-app.use(cors({ origin: "*" })); //For FCC testing purposes only
-
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(helmet());
 
-//Sample front-end
-app.route("/:project/").get(function (req, res) {
+// routes
+app.route("/:project/").get((req, res) => {
   res.sendFile(process.cwd() + "/views/issue.html");
 });
 
-//Index page (static HTML)
-app.route("/").get(function (req, res) {
+app.route("/").get((req, res) => {
   res.sendFile(process.cwd() + "/views/index.html");
 });
 
-//For FCC testing purposes
 fccTestingRoutes(app);
-
-//Routing for API
 apiRoutes(app);
 
-//404 Not Found Middleware
-app.use(function (req, res, next) {
+// 404
+app.use((req, res) => {
   res.status(404).type("text").send("Not Found");
 });
 
-//Start our server and tests!
-app.listen(process.env.PORT || 3000, function () {
-  console.log("Listening on port " + process.env.PORT);
+// start server
+const listener = app.listen(process.env.PORT || 3000, () => {
+  console.log("Listening on port " + listener.address().port);
+
   if (process.env.NODE_ENV === "test") {
     console.log("Running Tests...");
-    setTimeout(function () {
-      try {
-        runner.run();
-      } catch (e) {
-        var error = e;
-        console.log("Tests are not valid:");
-        console.log(error);
-      }
-    }, 3500);
+    setTimeout(() => runner.run(), 3000);
   }
 });
 
-module.exports = app; //for testing
+module.exports = app;
