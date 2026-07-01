@@ -43,7 +43,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Create issue with required fields only", function (done) {
+    test("Create issue with only required fields", function (done) {
       chai
         .request(server)
         .post("/api/issues/test")
@@ -60,12 +60,12 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Missing required fields", function (done) {
+    test("Create issue with missing required fields", function (done) {
       chai
         .request(server)
         .post("/api/issues/test")
         .send({
-          issue_title: "Title only",
+          issue_title: "Only title",
         })
         .end((err, res) => {
           assert.equal(res.status, 400);
@@ -79,7 +79,7 @@ suite("Functional Tests", function () {
   // GET TESTS
   // =========================
   suite("GET /api/issues/{project}", function () {
-    test("View issues", function (done) {
+    test("View issues on a project", function (done) {
       chai
         .request(server)
         .get("/api/issues/test")
@@ -91,7 +91,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Filter by one field", function (done) {
+    test("View issues with one filter", function (done) {
       chai
         .request(server)
         .get("/api/issues/test")
@@ -103,7 +103,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Filter by multiple fields", function (done) {
+    test("View issues with multiple filters", function (done) {
       chai
         .request(server)
         .get("/api/issues/test")
@@ -123,7 +123,7 @@ suite("Functional Tests", function () {
   // PUT TESTS
   // =========================
   suite("PUT /api/issues/{project}", function () {
-    test("Update one field", function (done) {
+    test("Update one field on an issue", function (done) {
       chai
         .request(server)
         .put("/api/issues/test")
@@ -141,7 +141,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Update multiple fields", function (done) {
+    test("Update multiple fields on an issue", function (done) {
       chai
         .request(server)
         .put("/api/issues/test")
@@ -157,7 +157,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Missing _id", function (done) {
+    test("Update an issue with missing _id", function (done) {
       chai
         .request(server)
         .put("/api/issues/test")
@@ -171,7 +171,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("No update fields", function (done) {
+    test("Update an issue with no fields to update", function (done) {
       chai
         .request(server)
         .put("/api/issues/test")
@@ -187,13 +187,29 @@ suite("Functional Tests", function () {
           done();
         });
     });
+
+    // (Optional extra - many FCC solutions ignore invalid _id for PUT)
+    test("Update an issue with invalid _id", function (done) {
+      chai
+        .request(server)
+        .put("/api/issues/test")
+        .send({
+          _id: "invalidid123",
+          status_text: "test",
+        })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, { error: "could not update" });
+          done();
+        });
+    });
   });
 
   // =========================
   // DELETE TESTS
   // =========================
   suite("DELETE /api/issues/{project}", function () {
-    test("Delete issue", function (done) {
+    test("Delete an issue", function (done) {
       chai
         .request(server)
         .delete("/api/issues/test")
@@ -208,7 +224,7 @@ suite("Functional Tests", function () {
         });
     });
 
-    test("Delete with missing _id", function (done) {
+    test("Delete an issue with missing _id", function (done) {
       chai
         .request(server)
         .delete("/api/issues/test")
@@ -216,6 +232,18 @@ suite("Functional Tests", function () {
         .end((err, res) => {
           assert.equal(res.status, 400);
           assert.deepEqual(res.body, { error: "missing _id" });
+          done();
+        });
+    });
+
+    test("Delete an issue with invalid _id", function (done) {
+      chai
+        .request(server)
+        .delete("/api/issues/test")
+        .send({ _id: "invalidid123" })
+        .end((err, res) => {
+          assert.equal(res.status, 400);
+          assert.deepEqual(res.body, { error: "could not delete" });
           done();
         });
     });

@@ -45,13 +45,13 @@ module.exports = function (app) {
   app.get("/api/issues/:project", async (req, res) => {
     const filter = { project: req.params.project };
 
-    Object.keys(req.query).forEach((key) => {
+    for (let key in req.query) {
       if (key === "open") {
         filter.open = req.query.open === "true";
       } else {
         filter[key] = req.query[key];
       }
-    });
+    }
 
     const issues = await Issue.find(filter).select("-__v");
     return res.json(issues);
@@ -62,18 +62,16 @@ module.exports = function (app) {
     const { _id, ...updates } = req.body;
 
     if (!_id) {
-      return res.status(400).json({
-        error: "missing _id",
-      });
+      return res.status(400).json({ error: "missing _id" });
     }
 
     const clean = {};
 
-    Object.keys(updates).forEach((k) => {
-      if (updates[k] !== "" && updates[k] !== undefined) {
-        clean[k] = updates[k];
+    for (let key in updates) {
+      if (updates[key] !== "" && updates[key] !== undefined) {
+        clean[key] = updates[key];
       }
-    });
+    }
 
     if (Object.keys(clean).length === 0) {
       return res.status(400).json({
@@ -85,15 +83,11 @@ module.exports = function (app) {
     clean.updated_on = new Date();
 
     try {
-      const updated = await Issue.findByIdAndUpdate(_id, clean, {
-        new: true,
-        runValidators: true,
-      });
+      const updated = await Issue.findByIdAndUpdate(_id, clean);
 
       if (!updated) {
         return res.status(400).json({
           error: "could not update",
-          _id,
         });
       }
 
@@ -104,7 +98,6 @@ module.exports = function (app) {
     } catch (err) {
       return res.status(400).json({
         error: "could not update",
-        _id,
       });
     }
   });
@@ -114,9 +107,7 @@ module.exports = function (app) {
     const { _id } = req.body;
 
     if (!_id) {
-      return res.status(400).json({
-        error: "missing _id",
-      });
+      return res.status(400).json({ error: "missing _id" });
     }
 
     try {
@@ -125,7 +116,6 @@ module.exports = function (app) {
       if (!deleted) {
         return res.status(400).json({
           error: "could not delete",
-          _id,
         });
       }
 
@@ -136,7 +126,6 @@ module.exports = function (app) {
     } catch (err) {
       return res.status(400).json({
         error: "could not delete",
-        _id,
       });
     }
   });
