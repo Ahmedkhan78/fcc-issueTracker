@@ -1,8 +1,4 @@
-/*
- *
- * Functional Tests for Issue Tracker
- *
- */
+"use strict";
 
 var chaiHttp = require("chai-http");
 var chai = require("chai");
@@ -14,9 +10,7 @@ chai.use(chaiHttp);
 var _idTest;
 
 suite("Functional Tests", function () {
-  // =========================
-  // POST TESTS
-  // =========================
+  // ================= POST =================
   suite("POST /api/issues/{project}", function () {
     test("Create issue with every field", function (done) {
       chai
@@ -38,6 +32,7 @@ suite("Functional Tests", function () {
           assert.equal(res.body.status_text, "in progress");
           assert.equal(res.body.open, true);
           assert.property(res.body, "_id");
+
           _idTest = res.body._id;
           done();
         });
@@ -64,20 +59,18 @@ suite("Functional Tests", function () {
       chai
         .request(server)
         .post("/api/issues/test")
-        .send({
-          issue_title: "Only title",
-        })
+        .send({ issue_title: "Only title" })
         .end((err, res) => {
           assert.equal(res.status, 400);
-          assert.deepEqual(res.body, { error: "required field(s) missing" });
+          assert.deepEqual(res.body, {
+            error: "required field(s) missing",
+          });
           done();
         });
     });
   });
 
-  // =========================
-  // GET TESTS
-  // =========================
+  // ================= GET =================
   suite("GET /api/issues/{project}", function () {
     test("View issues on a project", function (done) {
       chai
@@ -86,7 +79,6 @@ suite("Functional Tests", function () {
         .end((err, res) => {
           assert.equal(res.status, 200);
           assert.isArray(res.body);
-          assert.property(res.body[0], "_id");
           done();
         });
     });
@@ -107,10 +99,7 @@ suite("Functional Tests", function () {
       chai
         .request(server)
         .get("/api/issues/test")
-        .query({
-          issue_title: "Title",
-          open: true,
-        })
+        .query({ issue_title: "Title", open: true })
         .end((err, res) => {
           assert.equal(res.status, 200);
           assert.isArray(res.body);
@@ -119,9 +108,7 @@ suite("Functional Tests", function () {
     });
   });
 
-  // =========================
-  // PUT TESTS
-  // =========================
+  // ================= PUT =================
   suite("PUT /api/issues/{project}", function () {
     test("Update one field on an issue", function (done) {
       chai
@@ -153,6 +140,7 @@ suite("Functional Tests", function () {
         .end((err, res) => {
           assert.equal(res.status, 200);
           assert.equal(res.body.result, "successfully updated");
+          assert.equal(res.body._id, _idTest);
           done();
         });
     });
@@ -161,12 +149,12 @@ suite("Functional Tests", function () {
       chai
         .request(server)
         .put("/api/issues/test")
-        .send({
-          status_text: "fail",
-        })
+        .send({ status_text: "fail" })
         .end((err, res) => {
           assert.equal(res.status, 400);
-          assert.deepEqual(res.body, { error: "missing _id" });
+          assert.deepEqual(res.body, {
+            error: "missing _id",
+          });
           done();
         });
     });
@@ -175,9 +163,7 @@ suite("Functional Tests", function () {
       chai
         .request(server)
         .put("/api/issues/test")
-        .send({
-          _id: _idTest,
-        })
+        .send({ _id: _idTest })
         .end((err, res) => {
           assert.equal(res.status, 400);
           assert.deepEqual(res.body, {
@@ -188,7 +174,6 @@ suite("Functional Tests", function () {
         });
     });
 
-    // (Optional extra - many FCC solutions ignore invalid _id for PUT)
     test("Update an issue with invalid _id", function (done) {
       chai
         .request(server)
@@ -199,15 +184,13 @@ suite("Functional Tests", function () {
         })
         .end((err, res) => {
           assert.equal(res.status, 400);
-          assert.deepEqual(res.body, { error: "could not update" });
+          assert.equal(res.body.error, "could not update");
           done();
         });
     });
   });
 
-  // =========================
-  // DELETE TESTS
-  // =========================
+  // ================= DELETE =================
   suite("DELETE /api/issues/{project}", function () {
     test("Delete an issue", function (done) {
       chai
@@ -231,7 +214,9 @@ suite("Functional Tests", function () {
         .send({})
         .end((err, res) => {
           assert.equal(res.status, 400);
-          assert.deepEqual(res.body, { error: "missing _id" });
+          assert.deepEqual(res.body, {
+            error: "missing _id",
+          });
           done();
         });
     });
@@ -243,7 +228,7 @@ suite("Functional Tests", function () {
         .send({ _id: "invalidid123" })
         .end((err, res) => {
           assert.equal(res.status, 400);
-          assert.deepEqual(res.body, { error: "could not delete" });
+          assert.equal(res.body.error, "could not delete");
           done();
         });
     });

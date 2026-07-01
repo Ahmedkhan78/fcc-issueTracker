@@ -62,7 +62,9 @@ module.exports = function (app) {
     const { _id, ...updates } = req.body;
 
     if (!_id) {
-      return res.status(400).json({ error: "missing _id" });
+      return res.status(400).json({
+        error: "missing _id",
+      });
     }
 
     const clean = {};
@@ -88,6 +90,7 @@ module.exports = function (app) {
       if (!updated) {
         return res.status(400).json({
           error: "could not update",
+          _id,
         });
       }
 
@@ -98,6 +101,7 @@ module.exports = function (app) {
     } catch (err) {
       return res.status(400).json({
         error: "could not update",
+        _id,
       });
     }
   });
@@ -107,7 +111,9 @@ module.exports = function (app) {
     const { _id } = req.body;
 
     if (!_id) {
-      return res.status(400).json({ error: "missing _id" });
+      return res.status(400).json({
+        error: "missing _id",
+      });
     }
 
     try {
@@ -116,6 +122,7 @@ module.exports = function (app) {
       if (!deleted) {
         return res.status(400).json({
           error: "could not delete",
+          _id,
         });
       }
 
@@ -126,6 +133,7 @@ module.exports = function (app) {
     } catch (err) {
       return res.status(400).json({
         error: "could not delete",
+        _id,
       });
     }
   });
