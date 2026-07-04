@@ -14,9 +14,9 @@ A full-stack **Issue Tracker** application built as part of the **freeCodeCamp Q
 
 ## Tech Stack
 
-- Node.js
-- Express.js
-- MongoDB
+- Node.js ![Node.js](https://img.shields.io/badge/Node.js-24.x-green?logo=node.js)
+- Express.js ![Express](https://img.shields.io/badge/Express-5.x-black?logo=express)
+- MongoDB ![MongoDB](https://img.shields.io/badge/MongoDB-Database-green?logo=mongodb)
 - Mongoose
 - Mocha
 - Chai
@@ -202,4 +202,5 @@ https://github.com/Ahmedkhan78/fcc-issueTracker
 
 ## License
 
+![License](https://img.shields.io/badge/License-MIT-blue)
 This project was created for educational purposes as part of the freeCodeCamp Quality Assurance Certification.
