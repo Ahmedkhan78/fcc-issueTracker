@@ -1,19 +1,30 @@
+"use strict";
+
 const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
-const issueSchema = new Schema(
+
+const issueSchema = new mongoose.Schema(
   {
     issue_title: { type: String, required: true },
     issue_text: { type: String, required: true },
     created_by: { type: String, required: true },
-    open: { type: Boolean, required: true },
-    assigned_to: { type: String, required: false },
-    status_text: { type: String, required: false },
+    assigned_to: { type: String, default: "" },
+    status_text: { type: String, default: "" },
+    open: { type: Boolean, default: true },
   },
-  { timestamps: { createdAt: "created_on", updatedAt: "updated_on" } },
+  {
+    timestamps: {
+      createdAt: "created_on",
+      updatedAt: "updated_on",
+    },
+  },
 );
-const projectSchema = new Schema({
-  projectName: { type: String, required: true },
+
+const projectSchema = new mongoose.Schema({
+  projectName: String,
   issues: [issueSchema],
 });
-module.exports.Issue = mongoose.model("issues", issueSchema);
-module.exports.Project = mongoose.model("project", projectSchema);
+
+module.exports = {
+  Issue: mongoose.model("Issue", issueSchema),
+  Project: mongoose.model("Project", projectSchema),
+};

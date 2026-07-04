@@ -1,60 +1,58 @@
 "use strict";
+
 const express = require("express");
 const bodyParser = require("body-parser");
-const expect = require("chai").expect;
 const cors = require("cors");
 require("dotenv").config();
+
 const apiRoutes = require("./routes/api.js");
 const fccTestingRoutes = require("./routes/fcctesting.js");
 const runner = require("./test-runner");
-const mongo = require("mongodb");
 
 const mongoose = require("mongoose");
 mongoose.connect(process.env.DB);
+
 const db = mongoose.connection;
 db.once("open", () => {
-  console.log("Cameron's app has connected to MongoDB.");
+  console.log("Connected to MongoDB");
 });
-db.on("error", (err) => {
-  console.log(err);
-});
-mongoose.set("useFindAndModify", false);
+db.on("error", console.error);
 
-let app = express();
+const app = express();
+
 app.use("/public", express.static(process.cwd() + "/public"));
-app.use(cors({ origin: "*" })); //For FCC testing purposes only
+app.use(cors({ origin: "*" }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// Sample front-end
-app.route("/:project/").get(function (req, res) {
+
+app.route("/:project/").get((req, res) => {
   res.sendFile(process.cwd() + "/views/issue.html");
 });
-//Index page (static HTML)
-app.route("/").get(function (req, res) {
+
+app.route("/").get((req, res) => {
   res.sendFile(process.cwd() + "/views/index.html");
 });
-//For FCC testing purposes
+
 fccTestingRoutes(app);
-//Routing for API
 app.use("/api", apiRoutes);
-//404 Not Found Middleware
-app.use(function (req, res, next) {
+
+app.use((req, res) => {
   res.status(404).type("text").send("Not Found");
 });
-//Start our server and tests!
-app.listen(process.env.PORT || 3000, function () {
-  console.log("Listening on port " + process.env.PORT);
+
+const listener = app.listen(process.env.PORT || 3000, () => {
+  console.log("Listening on port " + listener.address().port);
+
   if (process.env.NODE_ENV === "test") {
     console.log("Running Tests...");
-    setTimeout(function () {
+    setTimeout(() => {
       try {
         runner.run();
       } catch (e) {
-        let error = e;
-        console.log("Tests are not valid:");
-        console.log(error);
+        console.log("Tests error:", e);
       }
     }, 3500);
   }
 });
-module.exports = app; //for testing
+
+module.exports = app;

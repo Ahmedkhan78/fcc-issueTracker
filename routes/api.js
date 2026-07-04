@@ -1,5 +1,5 @@
 "use strict";
-const issueController = require("../public/controllers/issueController");
+const issueController = require("../public/controllers/issueControllers");
 const router = require("express").Router();
 
 router.get("/issues/:project", issueController.viewIssues);
